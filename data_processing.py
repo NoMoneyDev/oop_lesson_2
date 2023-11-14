@@ -161,13 +161,32 @@ print()
 
 print("The average number of games played for teams ranking below 10 versus teams ranking above or equal 10")
 my_team_table = my_DB.search('teams')
+my_team_table_other = my_team_table.filter(lambda team: int(team['ranking']) > 10)
 my_team_table_first10 = my_team_table.filter(lambda team: int(team['ranking']) <= 10)
-# first10_avg
+
 print(f"{my_team_table_first10.aggregate(sum, 'games') / len(my_team_table_first10.table):.2f}")
+print(f"{my_team_table_other.aggregate(sum, 'games') / len(my_team_table_other.table):.2f}")
 print()
 
 print("The average number of passes made by forwards versus by midfielders")
 my_midfield_table = my_DB.search("player")
 my_midfield_table.filter(lambda player: player['position'] in ['midfielders', 'forwards'])
-print(f"{my_midfield_table.aggregate(sum, 'passes') / len(my_midfield_table.table): .2f}")
+print(f"{my_midfield_table.aggregate(sum, 'passes') / len(my_midfield_table.table):.2f}")
 print()
+
+print("The average fare paid by passengers in the first class versus in the third class")
+my_titanic_table = my_DB.search('titanic')
+my_titanic_table_firstclass = my_titanic_table.filter(lambda passenger: passenger['class'] == '1')
+my_titanic_table_thirdclass = my_titanic_table.filter(lambda passenger: passenger['class'] == '3')
+print(f"{my_titanic_table_firstclass.aggregate(sum, 'fare') / len(my_titanic_table_firstclass.table):.2f}")
+print(f"{my_titanic_table_thirdclass.aggregate(sum, 'fare') / len(my_titanic_table_thirdclass.table):.2f}")
+print()
+
+print("The survival rate of male versus female passengers")
+my_titanic_table_male = my_titanic_table.filter(lambda passenger: passenger["gender"] == 'M')
+my_titanic_table_female = my_titanic_table.filter(lambda passenger: passenger["gender"] == 'F')
+print(f"{len(my_titanic_table_male.filter(lambda passenger: passenger['survived'] == 'yes').table) /
+         len(my_titanic_table_male.table) * 100:.2f}%")
+print(f"{len(my_titanic_table_female.filter(lambda passenger: passenger['survived'] == 'yes').table) /
+         len(my_titanic_table_female.table) * 100:.2f}%")
+
