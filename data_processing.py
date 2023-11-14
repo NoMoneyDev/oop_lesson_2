@@ -104,7 +104,7 @@ my_DB.insert(table2)
 my_DB.insert(table3)
 my_DB.insert(table4)
 my_DB.insert(table5)
-aw
+
 my_table1 = my_DB.search('cities')
 
 print("Test filter: only filtering out cities in Italy")
@@ -150,4 +150,24 @@ for item in my_table2.table:
     if len(my_table1_filtered.table) >= 1:
         print(item['country'], my_table1_filtered.aggregate(lambda x: min(x), 'latitude'),
               my_table1_filtered.aggregate(lambda x: max(x), 'latitude'))
+print()
+
+print("player on a team with “ia” in the team name played less than 200 minutes "
+      "and made more than 100 passes")
+my_player_table = table4
+my_player_table = my_player_table.filter(lambda player: "ia" in player['team'] and int(player['minutes']) > 200)
+print(my_player_table.select(['surname', 'team', 'position']))
+print()
+
+print("The average number of games played for teams ranking below 10 versus teams ranking above or equal 10")
+my_team_table = my_DB.search('teams')
+my_team_table_first10 = my_team_table.filter(lambda team: int(team['ranking']) <= 10)
+# first10_avg
+print(f"{my_team_table_first10.aggregate(sum, 'games') / len(my_team_table_first10.table):.2f}")
+print()
+
+print("The average number of passes made by forwards versus by midfielders")
+my_midfield_table = my_DB.search("player")
+my_midfield_table.filter(lambda player: player['position'] in ['midfielders', 'forwards'])
+print(f"{my_midfield_table.aggregate(sum, 'passes') / len(my_midfield_table.table): .2f}")
 print()
