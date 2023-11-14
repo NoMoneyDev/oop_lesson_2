@@ -190,3 +190,6 @@ print(f"{len(my_titanic_table_male.filter(lambda passenger: passenger['survived'
 print(f"{len(my_titanic_table_female.filter(lambda passenger: passenger['survived'] == 'yes').table) /
          len(my_titanic_table_female.table) * 100:.2f}%")
 
+print("Find the total number of male passengers embarked at Southampton")
+print(len(my_titanic_table_male.filter(lambda passenger: passenger['embarked'] == 'Southampton').table))
+print()
