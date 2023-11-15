@@ -55,6 +55,41 @@ class Table:
         self.table_name = table_name
         self.table = table
 
+    def pivot_table(self, head, attr, func):
+        list_set = []
+        return_list = []
+        temp = []
+        for i in head:
+            temp = self.select(i)
+            temp2 = []
+            temp2 += [j[i] for j in temp]
+            list_set += [list(set(temp2))]
+        return_list += self.gen_comb(list_set)
+        temp = []
+        for l in return_list:
+            temp += [[l]]
+        for l in temp:
+            temp_table = self.filter(lambda passenger: passenger['embarked'] == l[0][0] and passenger['gender'] == l[0][1]
+                                                       and passenger['class'] == l[0][2])
+            t = []
+            for index, attribute in enumerate(attr):
+                t += [temp_table.aggregate(func[index], attribute)]
+            l += [t]
+        return_list = temp
+        return return_list
+
+    def gen_comb(self, list_set):
+        return_list = []
+        if len(list_set) == 1:
+            for item in list_set[0]:
+                return_list.append([item])
+        else:
+            for i in list_set[-1]:
+                for item in self.gen_comb(list_set[:-1]):
+                    item += [i]
+                    return_list += [item]
+        return return_list
+
     def join(self, other_table, common_key):
         joined_table = Table(self.table_name + '_joins_' + other_table.table_name, [])
         for item1 in self.table:
@@ -73,11 +108,24 @@ class Table:
                 filtered_table.table.append(item1)
         return filtered_table
 
+    def __is_float(self, element):
+        if element is None:
+            return False
+        try:
+            float(element)
+            return True
+        except ValueError:
+            return False
+
     def aggregate(self, function, aggregation_key):
         temps = []
         for item1 in self.table:
-            temps.append(float(item1[aggregation_key]))
+            if self.__is_float(item1[aggregation_key]):
+                temps.append(float(item1[aggregation_key]))
+            else:
+                temps.append(item1[aggregation_key])
         return function(temps)
+
 
     def select(self, attributes_list):
         temps = []
@@ -193,3 +241,9 @@ print(f"{len(my_titanic_table_female.filter(lambda passenger: passenger['survive
 print("Find the total number of male passengers embarked at Southampton")
 print(len(my_titanic_table_male.filter(lambda passenger: passenger['embarked'] == 'Southampton').table))
 print()
+
+table4 = Table('titanic', titanic)
+my_DB.insert(table4)
+my_table4 = my_DB.search('titanic')
+my_pivot = my_table4.pivot_table(['embarked', 'gender', 'class'], ['fare', 'fare', 'fare', 'last'], [lambda x: min(x), lambda x: max(x), lambda x: sum(x)/len(x), lambda x: len(x)])
+print(my_pivot)
