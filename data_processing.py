@@ -55,41 +55,6 @@ class Table:
         self.table_name = table_name
         self.table = table
 
-    def pivot_table(self, head, attr, func):
-        list_set = []
-        return_list = []
-        temp = []
-        for i in head:
-            temp = self.select(i)
-            temp2 = []
-            temp2 += [j[i] for j in temp]
-            list_set += [list(set(temp2))]
-        return_list += self.gen_comb(list_set)
-        temp = []
-        for l in return_list:
-            temp += [[l]]
-        for l in temp:
-            temp_table = self.filter(lambda passenger: passenger['embarked'] == l[0][0] and passenger['gender'] == l[0][1]
-                                                       and passenger['class'] == l[0][2])
-            t = []
-            for index, attribute in enumerate(attr):
-                t += [temp_table.aggregate(func[index], attribute)]
-            l += [t]
-        return_list = temp
-        return return_list
-
-    def gen_comb(self, list_set):
-        return_list = []
-        if len(list_set) == 1:
-            for item in list_set[0]:
-                return_list.append([item])
-        else:
-            for i in list_set[-1]:
-                for item in self.gen_comb(list_set[:-1]):
-                    item += [i]
-                    return_list += [item]
-        return return_list
-
     def join(self, other_table, common_key):
         joined_table = Table(self.table_name + '_joins_' + other_table.table_name, [])
         for item1 in self.table:
@@ -108,24 +73,11 @@ class Table:
                 filtered_table.table.append(item1)
         return filtered_table
 
-    def __is_float(self, element):
-        if element is None:
-            return False
-        try:
-            float(element)
-            return True
-        except ValueError:
-            return False
-
     def aggregate(self, function, aggregation_key):
         temps = []
         for item1 in self.table:
-            if self.__is_float(item1[aggregation_key]):
-                temps.append(float(item1[aggregation_key]))
-            else:
-                temps.append(item1[aggregation_key])
+            temps.append(float(item1[aggregation_key]))
         return function(temps)
-
 
     def select(self, attributes_list):
         temps = []
@@ -203,7 +155,8 @@ print()
 print("player on a team with “ia” in the team name played less than 200 minutes "
       "and made more than 100 passes")
 my_player_table = table4
-my_player_table = my_player_table.filter(lambda player: "ia" in player['team'] and int(player['minutes']) > 200)
+my_player_table = my_player_table.filter(lambda player: "ia" in player['team'] and int(player['minutes']) < 200
+                                                        and int(player['passes']) > 100)
 print(my_player_table.select(['surname', 'team', 'position']))
 print()
 
@@ -212,14 +165,16 @@ my_team_table = my_DB.search('teams')
 my_team_table_other = my_team_table.filter(lambda team: int(team['ranking']) > 10)
 my_team_table_first10 = my_team_table.filter(lambda team: int(team['ranking']) <= 10)
 
-print(f"{my_team_table_first10.aggregate(sum, 'games') / len(my_team_table_first10.table):.2f}")
-print(f"{my_team_table_other.aggregate(sum, 'games') / len(my_team_table_other.table):.2f}")
+print(f"{my_team_table_first10.aggregate(lambda x: sum(x) / len(x), 'games'): .2f}")
+print(f"{my_team_table_other.aggregate(lambda x: sum(x) / len(x), 'games'): .2f}")
 print()
 
 print("The average number of passes made by forwards versus by midfielders")
-my_midfield_table = my_DB.search("player")
-my_midfield_table.filter(lambda player: player['position'] in ['midfielders', 'forwards'])
-print(f"{my_midfield_table.aggregate(sum, 'passes') / len(my_midfield_table.table):.2f}")
+my_player_table = my_DB.search("player")
+my_midfield_table = my_player_table.filter(lambda player: player['position'] == 'midfielder')
+my_forward_table = my_player_table.filter(lambda player: player['position'] == 'forward')
+print(f"{my_forward_table.aggregate(lambda x: sum(x)/len(x), 'passes'): .2f}")
+print(f"{my_midfield_table.aggregate(lambda x: sum(x)/len(x), 'passes'): .2f}")
 print()
 
 print("The average fare paid by passengers in the first class versus in the third class")
@@ -237,13 +192,8 @@ print(f"{len(my_titanic_table_male.filter(lambda passenger: passenger['survived'
          len(my_titanic_table_male.table) * 100:.2f}%")
 print(f"{len(my_titanic_table_female.filter(lambda passenger: passenger['survived'] == 'yes').table) /
          len(my_titanic_table_female.table) * 100:.2f}%")
+print()
 
 print("Find the total number of male passengers embarked at Southampton")
 print(len(my_titanic_table_male.filter(lambda passenger: passenger['embarked'] == 'Southampton').table))
 print()
-
-table4 = Table('titanic', titanic)
-my_DB.insert(table4)
-my_table4 = my_DB.search('titanic')
-my_pivot = my_table4.pivot_table(['embarked', 'gender', 'class'], ['fare', 'fare', 'fare', 'last'], [lambda x: min(x), lambda x: max(x), lambda x: sum(x)/len(x), lambda x: len(x)])
-print(my_pivot)
